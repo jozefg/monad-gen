@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances, DeriveFunctor      #-}
-module Utils.Gen where
+module Control.Monad.Gen where
 import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Reader
