@@ -9,10 +9,15 @@ module Control.Monad.Gen
        , runGenTInt
        , runGenInt) where
 import Control.Applicative
+import Control.Monad.Cont
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
+import Control.Monad.Trans.Identity
+import Control.Monad.Error
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.List
 
 -- | The monad transformer for generating fresh values.
 newtype GenT e m a = GenT {unGenT :: StateT e m a}
@@ -46,13 +51,21 @@ class Monad m => MonadGen e m | m -> e where
   -- same value within a monadic computation.
   gen :: m e
 
-instance (Monad m, Functor m, Enum e) => MonadGen e (GenT e m) where
+instance (Monad m, Enum e) => MonadGen e (GenT e m) where
   gen = GenT $ modify succ >> get
+instance MonadGen e m => MonadGen e (IdentityT m) where
+  gen = lift gen
 instance MonadGen e m => MonadGen e (StateT s m) where
   gen = lift gen
 instance MonadGen e m => MonadGen e (ReaderT s m)  where
   gen = lift gen
 instance (MonadGen e m, Monoid s) => MonadGen e (WriterT s m)  where
+  gen = lift gen
+instance MonadGen e m => MonadGen e (ListT m) where
+  gen = lift gen
+instance MonadGen e m => MonadGen e (MaybeT m) where
+  gen = lift gen
+instance (MonadGen e m, Error err) => MonadGen e (ErrorT err m) where
   gen = lift gen
 
 runGenT :: Monad m => e -> GenT e m a -> m a
