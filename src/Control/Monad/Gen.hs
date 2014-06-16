@@ -7,6 +7,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
 
+-- | The monad transformer for generating fresh values.
 newtype GenT e m a = GenT {unGenT :: StateT e m a}
                    deriving(Functor)
 instance Monad m => Monad (GenT e m) where
@@ -32,18 +33,18 @@ instance (MonadWriter w m) => MonadWriter w (GenT e m) where
   listen = GenT . listen . unGenT
   pass   = GenT . pass . unGenT
 
+-- | The MTL style class for generating fresh values
 class Monad m => MonadGen e m | m -> e where
+  -- | Generate a fresh value @e@, @gen@ should never produce the
+  -- same value within a monadic computation.
   gen :: m e
 
 instance (Monad m, Functor m, Enum e) => MonadGen e (GenT e m) where
   gen = GenT $ modify succ >> get
-
 instance MonadGen e m => MonadGen e (StateT s m) where
   gen = lift gen
-
 instance MonadGen e m => MonadGen e (ReaderT s m)  where
   gen = lift gen
-
 instance (MonadGen e m, Monoid s) => MonadGen e (WriterT s m)  where
   gen = lift gen
 
@@ -53,6 +54,8 @@ runGenT e = flip evalStateT e . unGenT
 runGen :: e -> Gen e a -> a
 runGen e = runIdentity . runGenT e
 
+-- | A shortcut for the common case where we want fresh
+-- `Integer`s.
 runGenTInt :: Monad m => GenT Integer m a -> m a
 runGenTInt = runGenT 0
 
