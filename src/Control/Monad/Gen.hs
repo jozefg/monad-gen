@@ -1,5 +1,5 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances, DeriveFunctor      #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses                    #-}
+{-# LANGUAGE UndecidableInstances, DeriveFunctor, FunctionalDependencies #-}
 module Control.Monad.Gen where
 import Control.Applicative
 import Control.Monad.Identity
@@ -7,48 +7,54 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
 
-newtype GenT m a = GenT {unGenT :: StateT Integer m a}
-                    deriving(Functor)
-instance Monad m => Monad (GenT m) where
+newtype GenT e m a = GenT {unGenT :: StateT e m a}
+                   deriving(Functor)
+instance Monad m => Monad (GenT e m) where
   return = GenT . return
   (GenT m) >>= f = GenT $ m >>= unGenT . f
-instance (Functor f, Monad f) => Applicative (GenT f) where
+instance (Functor f, Monad f) => Applicative (GenT e f) where
   pure = GenT . pure
   (GenT f) <*> (GenT a) = GenT $ f <*> a
 
-type Gen = GenT Identity
+type Gen e = GenT e Identity
 
-instance MonadTrans GenT where
+instance MonadTrans (GenT e) where
   lift = GenT . lift
 
-instance MonadReader r m => MonadReader r (GenT m) where
+instance MonadReader r m => MonadReader r (GenT e m) where
   local f = GenT . local f . unGenT
   ask     = GenT ask
-instance MonadState s m => MonadState s (GenT m) where
+instance MonadState s m => MonadState s (GenT e m) where
   get    = GenT $ lift get
   put    = GenT . lift . put
-instance (MonadWriter w m) => MonadWriter w (GenT m) where
+instance (MonadWriter w m) => MonadWriter w (GenT e m) where
   tell m = lift $ tell m
   listen = GenT . listen . unGenT
   pass   = GenT . pass . unGenT
 
-class Monad m => MonadGen m where
-  gen :: m Integer
+class Monad m => MonadGen e m | m -> e where
+  gen :: m e
 
-instance (Monad m, Functor m) => MonadGen (GenT m) where
-  gen = GenT $ modify (+1) >> get
+instance (Monad m, Functor m, Enum e) => MonadGen e (GenT e m) where
+  gen = GenT $ modify succ >> get
 
-instance MonadGen m => MonadGen (StateT s m)  where
+instance MonadGen e m => MonadGen e (StateT s m) where
   gen = lift gen
 
-instance MonadGen m => MonadGen (ReaderT s m)  where
+instance MonadGen e m => MonadGen e (ReaderT s m)  where
   gen = lift gen
 
-instance (MonadGen m, Monoid s) => MonadGen (WriterT s m)  where
+instance (MonadGen e m, Monoid s) => MonadGen e (WriterT s m)  where
   gen = lift gen
 
-runGenT :: Monad m => GenT m a -> m a
-runGenT = flip evalStateT 0 . unGenT
+runGenT :: Monad m => e -> GenT e m a -> m a
+runGenT e = flip evalStateT e . unGenT
 
-runGen :: Gen a -> a
-runGen = runIdentity . runGenT
+runGen :: e -> Gen e a -> a
+runGen e = runIdentity . runGenT e
+
+runGenTInt :: Monad m => GenT Integer m a -> m a
+runGenTInt = runGenT 0
+
+runGenInt :: Gen Integer a -> a
+runGenInt = runIdentity . runGenTInt 
