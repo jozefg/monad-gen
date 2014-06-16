@@ -1,6 +1,13 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses                    #-}
 {-# LANGUAGE UndecidableInstances, DeriveFunctor, FunctionalDependencies #-}
-module Control.Monad.Gen where
+module Control.Monad.Gen
+       ( GenT
+       , Gen
+       , MonadGen(..)
+       , runGenT
+       , runGen
+       , runGenTInt
+       , runGenInt) where
 import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Reader
