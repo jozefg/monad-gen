@@ -18,7 +18,7 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Error
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.List
-
+import qualified Control.Monad.Trans.State as State
 -- | The monad transformer for generating fresh values.
 newtype GenT e m a = GenT {unGenT :: StateT e m a}
                    deriving(Functor)
