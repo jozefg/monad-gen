@@ -26,6 +26,10 @@ import Control.Monad.Gen.Class
 -- | The monad transformer for generating fresh values.
 newtype GenT e m a = GenT {unGenT :: StateT e m a}
                    deriving(Functor)
+
+instance (Monad m, Enum e) => MonadGen e (GenT e m) where
+  gen = GenT (modify succ) >> GenT get
+
 instance Monad m => Monad (GenT e m) where
   return = GenT . return
   (GenT m) >>= f = GenT $ m >>= unGenT . f
