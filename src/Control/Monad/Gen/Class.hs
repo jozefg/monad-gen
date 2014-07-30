@@ -4,11 +4,13 @@
 {-# LANGUAGE UndecidableInstances   #-}
 {-# LANGUAGE CPP   #-}
 module Control.Monad.Gen.Class where
-#if MIN_VERSION_mtl(2, 2, 2)
-import Control.Monad.Error
-#else
+-- Import the non-depricated one
+#if MIN_VERSION_mtl(2, 2, 0)
 import Control.Monad.Except
+#else
+import Control.Monad.Trans.Error
 #endif
+
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.List
@@ -35,9 +37,10 @@ instance MonadGen e m => MonadGen e (ListT m) where
 instance MonadGen e m => MonadGen e (MaybeT m) where
   gen = lift gen
 
-#if MIN_VERSION_mtl(2, 2, 2)
-instance (MonadGen e m, Error err) => MonadGen e (ErrorT err m) where
-  gen = lift gen
-#else
+#if MIN_VERSION_mtl(2, 2, 0)
 instance (MonadGen e m) => MonadGen e (ExceptT e m) where
   gen = lift gen
+#else
+instance (MonadGen e m, Error err) => MonadGen e (ErrorT err m) where
+  gen = lift gen
+#endif
