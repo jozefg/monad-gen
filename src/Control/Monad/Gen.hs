@@ -19,6 +19,8 @@ import Control.Monad.Error
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.List
 import qualified Control.Monad.Trans.State as State
+import Control.Monad.Gen.Class
+
 -- | The monad transformer for generating fresh values.
 newtype GenT e m a = GenT {unGenT :: StateT e m a}
                    deriving(Functor)
@@ -44,29 +46,6 @@ instance (MonadWriter w m) => MonadWriter w (GenT e m) where
   tell m = lift $ tell m
   listen = GenT . listen . unGenT
   pass   = GenT . pass . unGenT
-
--- | The MTL style class for generating fresh values
-class Monad m => MonadGen e m | m -> e where
-  -- | Generate a fresh value @e@, @gen@ should never produce the
-  -- same value within a monadic computation.
-  gen :: m e
-
-instance (Monad m, Enum e) => MonadGen e (GenT e m) where
-  gen = GenT $ modify succ >> get
-instance MonadGen e m => MonadGen e (IdentityT m) where
-  gen = lift gen
-instance MonadGen e m => MonadGen e (StateT s m) where
-  gen = lift gen
-instance MonadGen e m => MonadGen e (ReaderT s m)  where
-  gen = lift gen
-instance (MonadGen e m, Monoid s) => MonadGen e (WriterT s m)  where
-  gen = lift gen
-instance MonadGen e m => MonadGen e (ListT m) where
-  gen = lift gen
-instance MonadGen e m => MonadGen e (MaybeT m) where
-  gen = lift gen
-instance (MonadGen e m, Error err) => MonadGen e (ErrorT err m) where
-  gen = lift gen
 
 runGenT :: Monad m => e -> GenT e m a -> m a
 runGenT e = flip evalStateT e . unGenT
