@@ -67,7 +67,7 @@ instance MonadCont m => MonadCont (GenT e m) where
 
 #if MIN_VERSION_mtl(2, 2, 1)
 #else
-instance MonadError e m => MonadError e (GenT e m) where
+instance MonadError e m => MonadError e (GenT e' m) where
   throwError = GenT . throwError
   catchError m h = GenT $ catchError (unGenT m) (unGenT . h)
 #endif

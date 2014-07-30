@@ -50,9 +50,9 @@ instance (Monoid w, MonadGen e m) => MonadGen e (SW.WriterT w m) where
   gen = lift gen
 
 #if MIN_VERSION_mtl(2, 2, 1)
-instance (MonadGen e m) => MonadGen e (ExceptT e m) where
+instance (MonadGen e m) => MonadGen e (ExceptT e' m) where
   gen = lift gen
 #else
-instance (MonadGen e m, Error err) => MonadGen e (ErrorT err m) where
+instance (MonadGen e m, Error e') => MonadGen e (ErrorT e' m) where
   gen = lift gen
 #endif
