@@ -5,7 +5,7 @@
 {-# LANGUAGE CPP   #-}
 module Control.Monad.Gen.Class where
 -- Import the non-depricated one
-#if MIN_VERSION_mtl(2, 2, 0)
+#if MIN_VERSION_mtl(2, 2, 1)
 import           Control.Monad.Except
 #else
 import           Control.Monad.Trans.Error
@@ -49,7 +49,7 @@ instance MonadGen e m => MonadGen e (SS.StateT s m) where
 instance (Monoid w, MonadGen e m) => MonadGen e (SW.WriterT w m) where
   gen = lift gen
 
-#if MIN_VERSION_mtl(2, 2, 0)
+#if MIN_VERSION_mtl(2, 2, 1)
 instance (MonadGen e m) => MonadGen e (ExceptT e m) where
   gen = lift gen
 #else
