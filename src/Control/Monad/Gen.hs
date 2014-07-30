@@ -1,5 +1,5 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses                    #-}
-{-# LANGUAGE UndecidableInstances, DeriveFunctor, FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances, DeriveFunctor      #-}
 module Control.Monad.Gen
        ( GenT
        , Gen
@@ -9,16 +9,14 @@ module Control.Monad.Gen
        , runGenTWith
        , runGenWith) where
 import Control.Applicative
-import Control.Monad.Cont
+import Control.Monad
 import Control.Monad.Identity
-import Control.Monad.Reader
+import Control.Monad.Trans
+import Control.Monad.Cont.Class
+import Control.Monad.Reader.Class
 import Control.Monad.State
-import Control.Monad.Writer
-import Control.Monad.Trans.Identity
-import Control.Monad.Error
-import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.List
-import qualified Control.Monad.Trans.State as State
+import Control.Monad.Writer.Class
+import Control.Monad.Error.Class
 import Control.Monad.Gen.Class
 
 -- | The monad transformer for generating fresh values.
@@ -30,6 +28,9 @@ instance Monad m => Monad (GenT e m) where
 instance (Functor f, Monad f) => Applicative (GenT e f) where
   pure = GenT . pure
   (GenT f) <*> (GenT a) = GenT $ f <*> a
+instance (Monad m, Functor m, MonadPlus m) => Alternative (GenT e m) where
+  empty = mzero
+  (<|>) = mplus
 
 type Gen e = GenT e Identity
 
@@ -46,7 +47,15 @@ instance (MonadWriter w m) => MonadWriter w (GenT e m) where
   tell m = lift $ tell m
   listen = GenT . listen . unGenT
   pass   = GenT . pass . unGenT
-
+instance MonadFix m => MonadFix (GenT e m) where
+  mfix = GenT . mfix . (unGenT .)
+instance MonadPlus m =>  MonadPlus (GenT e m) where
+  mzero = GenT mzero
+  mplus (GenT m) (GenT m') = GenT $ mplus m m'
+instance MonadIO m => MonadIO (GenT e m) where
+  liftIO = GenT . liftIO
+instance MonadCont m => MonadCont (GenT e m) where
+  callCC f = GenT $ callCC (unGenT . f . (GenT .))
 
 -- | Run a @GenT@ computation starting from the value
 -- @toEnum 0@
