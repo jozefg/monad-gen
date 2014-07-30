@@ -1,11 +1,19 @@
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE CPP   #-}
 module Control.Monad.Gen.Class where
+#if MIN_VERSION_mtl(2, 2, 2)
 import Control.Monad.Error
-import Control.Monad.Identity
-import Control.Monad.Instances
+#else
+import Control.Monad.Except
+#endif
+import Control.Monad.Trans.Identity
+import Control.Monad.Trans.Maybe
 import Control.Monad.List
 import Control.Monad.Reader
 import Control.Monad.State
-import Control.Monad.Trans
 import Control.Monad.Writer
 
 -- | The MTL style class for generating fresh values
@@ -26,5 +34,10 @@ instance MonadGen e m => MonadGen e (ListT m) where
   gen = lift gen
 instance MonadGen e m => MonadGen e (MaybeT m) where
   gen = lift gen
+
+#if MIN_VERSION_mtl(2, 2, 2)
 instance (MonadGen e m, Error err) => MonadGen e (ErrorT err m) where
+  gen = lift gen
+#else
+instance (MonadGen e m) => MonadGen e (ExceptT e m) where
   gen = lift gen
