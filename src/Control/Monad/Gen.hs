@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances, DeriveFunctor      #-}
+{-# LANGUAGE CPP #-}
 module Control.Monad.Gen
        ( GenT
        , Gen
@@ -8,15 +9,18 @@ module Control.Monad.Gen
        , runGen
        , runGenTWith
        , runGenWith) where
+#if MIN_VERSION_mtl(2, 2, 1)
+import Control.Monad.Except
+#else
+import Control.Monad.Error
+#endif
+
 import Control.Applicative
-import Control.Monad
 import Control.Monad.Identity
-import Control.Monad.Trans
 import Control.Monad.Cont.Class
 import Control.Monad.Reader.Class
 import Control.Monad.State
 import Control.Monad.Writer.Class
-import Control.Monad.Error.Class
 import Control.Monad.Gen.Class
 
 -- | The monad transformer for generating fresh values.
@@ -56,6 +60,13 @@ instance MonadIO m => MonadIO (GenT e m) where
   liftIO = GenT . liftIO
 instance MonadCont m => MonadCont (GenT e m) where
   callCC f = GenT $ callCC (unGenT . f . (GenT .))
+
+#if MIN_VERSION_mtl(2, 2, 1)
+#else
+instance MonadError e m => MonadError e (GenT e m) where
+  throwError = GenT . throwError
+  catchError m h = GenT $ catchError (unGenT m) (unGenT . h)
+#endif
 
 -- | Run a @GenT@ computation starting from the value
 -- @toEnum 0@
