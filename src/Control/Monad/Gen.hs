@@ -6,8 +6,8 @@ module Control.Monad.Gen
        , MonadGen(..)
        , runGenT
        , runGen
-       , runGenTInt
-       , runGenInt) where
+       , runGenTWith
+       , runGenWith) where
 import Control.Applicative
 import Control.Monad.Cont
 import Control.Monad.Identity
@@ -47,16 +47,21 @@ instance (MonadWriter w m) => MonadWriter w (GenT e m) where
   listen = GenT . listen . unGenT
   pass   = GenT . pass . unGenT
 
-runGenT :: Monad m => e -> GenT e m a -> m a
-runGenT e = flip evalStateT e . unGenT
 
-runGen :: e -> Gen e a -> a
-runGen e = runIdentity . runGenT e
+-- | Run a @GenT@ computation starting from the value
+-- @toEnum 0@
+runGenT :: (Enum e, Monad m) => GenT e m a -> m a
+runGenT = runGenTWith (toEnum 0)
 
--- | A shortcut for the common case where we want fresh
--- `Integer`s.
-runGenTInt :: Monad m => GenT Integer m a -> m a
-runGenTInt = runGenT 0
+-- | Run a @Gen@ computation starting from the value
+-- @toEnum 0@
+runGen :: Enum e => Gen e a -> a
+runGen = runGenWith (toEnum 0)
 
-runGenInt :: Gen Integer a -> a
-runGenInt = runIdentity . runGenTInt 
+-- | Run a @GenT@ computation starting from a specific value @e@.
+runGenTWith :: Monad m => e -> GenT e m a -> m a
+runGenTWith e = flip evalStateT e . unGenT
+
+-- | Run a @Gen@ computation starting from a specific value @e@.
+runGenWith :: e -> Gen e a -> a
+runGenWith e = runIdentity . runGenTWith e
