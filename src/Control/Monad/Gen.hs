@@ -4,7 +4,7 @@
 module Control.Monad.Gen
        ( GenT
        , Gen
-       , MonadGen(..)
+       , module Control.Monad.Gen.Class
        , runGenT
        , runGen
        , runGenTWith
