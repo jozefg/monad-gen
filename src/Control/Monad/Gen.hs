@@ -102,6 +102,7 @@ runGen = runGenFrom (toEnum 0)
 runGenTFrom :: (Monad m, Enum e) => e -> GenT e m a -> m a
 runGenTFrom e = runGenTWith enumSucc e
 
+-- | Run a @Gen@ computation starting from a specific value @e@.
 runGenFrom :: Enum e => e -> Gen e a -> a
 runGenFrom e = runGenWith enumSucc e
 
@@ -112,5 +113,7 @@ runGenTWith s e = flip evalStateT e
                   . flip runReaderT s
                   . unGenT
 
+-- | Run a @GenT@ computation starting from a specific value @e@ with
+-- a the next fresh value determined by @Successor e@.
 runGenWith :: Successor e -> e -> Gen e a -> a
 runGenWith s e = runIdentity . runGenTWith s e
