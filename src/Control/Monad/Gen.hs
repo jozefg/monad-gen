@@ -24,7 +24,6 @@ import Control.Monad.Cont.Class
 import Control.Monad.Gen.Class
 import Control.Monad.Identity
 import Control.Monad.Reader
-import Control.Monad.Reader.Class
 import Control.Monad.State
 import Control.Monad.Writer.Class
 
@@ -74,13 +73,9 @@ instance MonadIO m => MonadIO (GenT e m) where
   liftIO = GenT . liftIO
 instance MonadCont m => MonadCont (GenT e m) where
   callCC f = GenT $ callCC (unGenT . f . (GenT .))
-
-#if MIN_VERSION_mtl(2, 2, 1)
-#else
 instance MonadError e m => MonadError e (GenT e' m) where
   throwError = GenT . throwError
   catchError m h = GenT $ catchError (unGenT m) (unGenT . h)
-#endif
 
 successor :: (e -> e) -> Successor e
 successor = Successor
